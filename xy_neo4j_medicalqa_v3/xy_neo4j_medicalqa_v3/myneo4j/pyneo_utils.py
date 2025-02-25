@@ -40,7 +40,8 @@ def get_str_by_dict(mydict):
 
 def get_all_relation(start, relation, end):
     try:
-        g = Graph('http://localhost:7474', user='neo4j', password='wswy0129')
+        # 修改连接方式为 bolt 协议
+        g = Graph('bolt://localhost:7687', user='neo4j', password='wswy0129')
         # 测试连接
         test_query = g.run("MATCH (n) RETURN count(n) as count").data()
         print("Neo4j连接成功，节点总数:", test_query[0]['count'])
