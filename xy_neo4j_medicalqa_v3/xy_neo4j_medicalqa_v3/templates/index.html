@@ -124,15 +124,19 @@
 
 <script src="/static/jquery-1.10.2.min.js"></script>
 <script src="/static/echarts.min.js"></script>
-<script>
-    // 在script标签之前添加数据预渲染
-    console.log("Graph Data:", {
+
+<!-- 在所有 script 标签之前添加数据初始化 -->
+<script type="text/javascript">
+    // 初始化图谱数据
+    window.GRAPH_DATA = {
         legendData: {{ legend_data|safe }},
         categories: {{ categories|safe }},
         nodes: {{ datas|safe }},
         links: {{ links|safe }}
-    });
+    };
+</script>
 
+<script>
     // 初始化图表
     const initChart = () => {
         const dom = document.getElementById('main');
@@ -141,35 +145,38 @@
             return null;
         }
         
-        console.log("Graph Data:", window.GRAPH_DATA);
         const myChart = echarts.init(dom);
-
+        
         const option1 = {
             title: {
                 text: '地理建模知识图谱',
-                left: 'center',
-                textStyle: {
-                    color: '#333',
-                    fontSize: 18
+                left: 'center'
+            },
+            tooltip: {
+                formatter: function(params) {
+                    if (params.dataType === 'node') {
+                        return `<strong>${params.data.name}</strong><br/>
+                                类型：${params.data.category}<br/>
+                                描述：${params.data.attr.desc}`;
+                    }
+                    return params.data.name;
                 }
             },
-            animationDurationUpdate: 1500,
-            animationEasingUpdate: 'quinticInOut',
             legend: {
                 orient: 'vertical',
                 right: 10,
                 top: 30,
                 data: window.GRAPH_DATA.legendData || [],
                 textStyle: {
-                    color: '#666'
+                    color: '#333'
                 }
             },
             series: [{
                 type: 'graph',
                 layout: 'force',
-                symbolSize: 50,
+                symbolSize: 45,  // 增大节点大小
                 edgeSymbol: ['circle', 'arrow'],
-                edgeSymbolSize: [4, 4],
+                edgeSymbolSize: [4, 8],
                 edgeLabel: {
                     normal: {
                         show: true,
@@ -177,44 +184,46 @@
                             return x.data.name;
                         },
                         textStyle: {
-                            fontSize: 10
+                            fontSize: 10,
+                            color: '#666'
                         }
                     }
                 },
                 force: {
-                    repulsion: 1000,
-                    edgeLength: [10, 100]
+                    repulsion: 800,    // 减小斥力
+                    gravity: 0.1,      // 减小重力
+                    edgeLength: 100,   // 减小边长度
+                    layoutAnimation: true
                 },
-                focusNodeAdjacency: true,
                 draggable: true,
                 roam: true,
-                categories: window.GRAPH_DATA.categories || [],
                 label: {
                     normal: {
                         show: true,
+                        position: 'inside',
                         textStyle: {
-                            fontSize: 10
+                            color: '#333',  // 深灰色文字
+                            fontSize: 11,
+                            fontWeight: 600,  // 加粗一点
+                            backgroundColor: 'rgba(255, 255, 255, 0.85)',  // 更不透明的白色背景
+                            padding: [4, 6],  // 稍微增加内边距
+                            borderRadius: 3,
+                            shadowColor: 'rgba(0, 0, 0, 0.2)',  // 添加轻微阴影
+                            shadowBlur: 2
                         }
-                    }
-                },
-                tooltip: {
-                    formatter: function(node) {
-                        if (!node.value) {
-                            return node.data.name;
-                        }
-                        return node.data.name + ":" + node.data.showNum;
                     }
                 },
                 lineStyle: {
                     normal: {
-                        opacity: 0.9,
-                        width: 1,
-                        curveness: 0.3
+                        opacity: 0.7,   // 降低边的透明度
+                        width: 1,       // 减小边的宽度
+                        curveness: 0.1, // 减小曲度
+                        color: '#aaa'   // 浅灰色边
                     }
                 },
-                nodes: window.GRAPH_DATA.nodes || [],
-                links: window.GRAPH_DATA.links || [],
-                categories: window.GRAPH_DATA.categories || []
+                nodes: window.GRAPH_DATA.nodes,
+                links: window.GRAPH_DATA.links,
+                categories: window.GRAPH_DATA.categories
             }]
         };
 
@@ -222,18 +231,17 @@
         return myChart;
     };
 
-    // 安全地初始化图表实例
-    let myChart;
-    try {
-        myChart = initChart();
-    } catch (error) {
-        console.error('图表初始化失败:', error);
-    }
-
-    // 窗口调整时自适应
-    if (myChart) {
-        window.addEventListener('resize', () => myChart.resize());
-    }
+    // 等待 DOM 加载完成后初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            const myChart = initChart();
+            if (myChart) {
+                window.addEventListener('resize', () => myChart.resize());
+            }
+        } catch (error) {
+            console.error('图表初始化失败:', error);
+        }
+    });
 
     // 表单交互处理（添加加载动画效果）
     document.getElementById('graphQueryForm').addEventListener('submit', function(e) {

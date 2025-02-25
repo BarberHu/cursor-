@@ -59,6 +59,7 @@ class QuestionClassifier:
 
     '''分类主函数'''
     def classify(self, question):
+        # 对问题进行分类，识别问题类型和实体
         data = {}
         medical_dict = self.check_medical(question)
         if not medical_dict:

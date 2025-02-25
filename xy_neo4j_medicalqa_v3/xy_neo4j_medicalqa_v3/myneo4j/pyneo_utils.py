@@ -62,6 +62,9 @@ def get_all_relation(start, relation, end):
         "结果讨论"
     ]
 
+    # 初始化 param
+    param = ""
+    
     if start != "":
         param = "where n.name='" + start + "'"
     if relation == "":
@@ -77,12 +80,21 @@ def get_all_relation(start, relation, end):
         else:
             param = "where b.name='" + end + "'"
 
-    sql = "MATCH (n)-[%s]-(b) %s RETURN n,r,b limit 200" % (mr, param)
-    print(sql)
-    # if name == "":
-    #     nodes_data_all = g.run("MATCH (n)-[r]-(b) RETURN n,r,b limit 100").data()
-    # else:
-    nodes_data_all = g.run(sql).data()
+    # 如果没有任何查询条件，返回所有关系
+    if not start and not end:
+        sql = "MATCH (n)-[r]-(b) RETURN n,r,b"
+    else:
+        sql = "MATCH (n)-[%s]-(b) %s RETURN n,r,b" % (mr, param)
+
+    print("执行查询:", sql)
+    
+    try:
+        nodes_data_all = g.run(sql).data()
+        print("查询结果数量:", len(nodes_data_all))
+    except Exception as e:
+        print("查询执行失败:", str(e))
+        return {"datas": [], "links": [], "legend_data": [], "categories": []}
+
     for nodes_relations in nodes_data_all:
         print("----")
         start_lable = str(nodes_relations['n'].labels).replace(":", "")
